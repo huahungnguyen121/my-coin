@@ -5,10 +5,11 @@ import helmet from "helmet";
 import cors from "cors";
 import { Server, WebSocket } from "ws";
 import { APP_CONSTANTS } from "./constants/app-constants";
-import { Block, Blockchain, Transaction } from "./blockchain/blockchain";
+import { Block, Blockchain } from "./blockchain/blockchain";
 import { MESSAGE_TYPE, SOCKET_EVENT_NAME, TMessage } from "./constants/common-constants";
 import { buildMsg, parseJSON } from "./utils";
 import { indexOf } from "lodash";
+import { getPublicFromWallet, initWallet } from "./wallet";
 
 const httpPort: number = APP_CONSTANTS.HTTP_PORT;
 const socketPort: number = APP_CONSTANTS.SOCKET_PORT;
@@ -17,8 +18,8 @@ const blockchain = new Blockchain();
 const sockets: WebSocket[] = [];
 
 // helpers
-const send = (ws: WebSocket, msg: TMessage) => ws.send(JSON.stringify(msg));
-const broadcast = (msg: TMessage) => {
+export const send = (ws: WebSocket, msg: TMessage) => ws.send(JSON.stringify(msg));
+export const broadcast = (msg: TMessage) => {
     sockets.forEach((socket) => send(socket, msg));
 };
 
@@ -140,19 +141,49 @@ const initBlockchainRouter = (): Router => {
 
     // mine a block
     blockchainRouter.post("/mine-block", (req, res) => {
-        const body = req.body;
-
-        const transaction = new Transaction(body);
-
-        const minedBlock = blockchain.mineBlock(transaction);
-        const addStatus = blockchain.addBlock(minedBlock);
-        broadcast(buildMsg(MESSAGE_TYPE.RECEIVE_CHAIN, [minedBlock]));
-
-        if (!addStatus) {
-            return res.status(400).send({ msg: "Failed to mine a block" });
+        const newBlock = blockchain.generateNextBlock();
+        if (newBlock === null) {
+            return res.status(400).send("Failed to generate block");
         }
 
-        res.send(minedBlock);
+        res.send(newBlock);
+        // const transaction = new Transaction(body);
+
+        // const minedBlock = blockchain.mineBlock(transaction);
+        // const addStatus = blockchain.addBlock(minedBlock);
+        // broadcast(buildMsg(MESSAGE_TYPE.RECEIVE_CHAIN, [minedBlock]));
+
+        // if (!addStatus) {
+        //     return res.status(400).send({ msg: "Failed to mine a block" });
+        // }
+
+        // res.send(minedBlock);
+    });
+
+    // mine a transaction
+    blockchainRouter.post("/mine-transaction", (req, res) => {
+        let { address, amount } = req.body;
+
+        if (!address || !amount) return res.status(400).send();
+
+        const parsedAmount = parseInt(amount);
+
+        if (address === "" || isNaN(parsedAmount)) return res.status(400).send();
+
+        try {
+            const block = blockchain.generateNextBlockWithTransaction(address, parsedAmount);
+            if (block === null) return res.status(400).send("Failed to create a new block from transaction");
+
+            res.send(block);
+        } catch (error: any) {
+            console.log(error?.message);
+            res.status(400).send({ msg: error?.message });
+        }
+    });
+
+    blockchainRouter.get("/balance", (req, res) => {
+        const balance = blockchain.getAccountBalance();
+        res.send({ balance: balance });
     });
 
     return blockchainRouter;
@@ -223,3 +254,4 @@ const initSocketServer = (port: number) => {
 
 initHttpServer(httpPort);
 initSocketServer(socketPort);
+initWallet();

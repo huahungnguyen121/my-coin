@@ -15,11 +15,11 @@ export const SOCKET_EVENT_NAME = {
 
 export const BLOCKCHAIN_DEFAULT_CONFIGS = {
     /**
-     * Minute
+     * Second
      */
-    BLOCK_GENERATION_INTERVAL: 1,
+    BLOCK_GENERATION_INTERVAL: 10,
     /**
      * Block
      */
-    DIFFICULTY_ADJUSTMENT_INTERVAL: 3,
+    DIFFICULTY_ADJUSTMENT_INTERVAL: 10,
 };
