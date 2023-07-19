@@ -2,6 +2,8 @@ export enum MESSAGE_TYPE {
     GET_LASTEST_BLOCK,
     GET_ENTIRE_CHAIN,
     RECEIVE_CHAIN,
+    GET_TRANSACTION_POOL,
+    RECEIVE_TRANSACTION_POOL,
 }
 
 export type TMessage = {

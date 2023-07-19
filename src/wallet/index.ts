@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import _ from "lodash";
 import { Transaction, TransactionIn, TransactionOut, UnspentTransactionOut } from "../blockchain/transaction";
 import { ec as EC, getPublicKeyFromPrivateKey } from "../keygen";
+import { TransactionPool } from "../blockchain/transaction-pool";
 
 const privateKeyLocation = "files/wallet/private_key";
 
@@ -67,10 +68,16 @@ const createTransaction = (
     receiverAddress: string,
     amount: number,
     privateKey: string,
-    unspentTxOuts: UnspentTransactionOut[]
+    unspentTxOuts: UnspentTransactionOut[],
+    txPool: TransactionPool
 ): Transaction => {
+    console.log("txPool: ", JSON.stringify(txPool));
     const myAddress: string = getPublicKeyFromPrivateKey(privateKey);
-    const myUnspentTxOuts = unspentTxOuts.filter((uTxO: UnspentTransactionOut) => uTxO.address === myAddress);
+    const myUnspentTxOutsFromUnspentTxOuts = unspentTxOuts.filter(
+        (uTxO: UnspentTransactionOut) => uTxO.address === myAddress
+    );
+
+    const myUnspentTxOuts = txPool.filterTxPoolTxs(myUnspentTxOutsFromUnspentTxOuts);
 
     const { includedUnspentTxOuts, leftOverAmount } = findTxOutsForAmount(amount, myUnspentTxOuts);
 
@@ -93,4 +100,12 @@ const createTransaction = (
     return tx;
 };
 
-export { createTransaction, getPublicFromWallet, getPrivateFromWallet, getBalance, generatePrivateKey, initWallet };
+export {
+    createTransaction,
+    getPublicFromWallet,
+    getPrivateFromWallet,
+    getBalance,
+    generatePrivateKey,
+    initWallet,
+    findTxOutsForAmount,
+};

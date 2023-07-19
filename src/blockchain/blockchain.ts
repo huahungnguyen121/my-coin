@@ -5,6 +5,7 @@ import { buildMsg, secondToMilisec } from "../utils";
 import { Transaction, UnspentTransactionOut, findUnspentTxOut } from "./transaction";
 import { createTransaction, getBalance, getPrivateFromWallet, getPublicFromWallet } from "../wallet";
 import { broadcast } from "..";
+import { TransactionPool } from "./transaction-pool";
 
 export class Block {
     index: number;
@@ -98,6 +99,7 @@ export class Blockchain {
     private chain: Block[];
     private unspentTxOuts: UnspentTransactionOut[] = [];
     private configs: typeof BLOCKCHAIN_DEFAULT_CONFIGS;
+    private transactionPool: TransactionPool = new TransactionPool();
 
     constructor(blockchain?: Block[], configs: typeof BLOCKCHAIN_DEFAULT_CONFIGS = BLOCKCHAIN_DEFAULT_CONFIGS) {
         if (Array.isArray(blockchain)) {
@@ -233,7 +235,7 @@ export class Blockchain {
             getPublicFromWallet(),
             this.chain[this.chain.length - 1].index + 1
         );
-        const blockData: Transaction[] = [coinbaseTx];
+        const blockData: Transaction[] = [coinbaseTx].concat(this.transactionPool.getPool());
 
         return this.generateNextRawBlock(blockData);
     }
@@ -252,7 +254,13 @@ export class Blockchain {
             this.chain[this.chain.length - 1].index + 1
         );
 
-        const tx: Transaction = createTransaction(receiverAddress, amount, getPrivateFromWallet(), this.unspentTxOuts);
+        const tx: Transaction = createTransaction(
+            receiverAddress,
+            amount,
+            getPrivateFromWallet(),
+            this.unspentTxOuts,
+            this.transactionPool
+        );
         const blockData: Transaction[] = [coinbaseTx, tx];
         return this.generateNextRawBlock(blockData);
     };
@@ -291,6 +299,10 @@ export class Blockchain {
         return _.cloneDeep(this.chain);
     }
 
+    getTxPoolData() {
+        return this.transactionPool.getPool();
+    }
+
     processTransactions(transactions: Transaction[], blockIndex: number) {
         if (!Transaction.isValidTransactionsStructure(transactions)) {
             return null;
@@ -302,6 +314,7 @@ export class Blockchain {
         }
 
         this.updateUnspentTxOuts(transactions);
+        this.transactionPool.updateTransactionPool(this.unspentTxOuts);
     }
 
     // methods for unspent transaction outs
@@ -325,6 +338,22 @@ export class Blockchain {
                     )
             )
             .concat(newUnspentTxOuts);
+    }
+
+    addToTxPool(tx: Transaction) {
+        this.transactionPool.addToTransactionPool(tx, this.unspentTxOuts);
+    }
+
+    sendTransaction(address: string, amount: number) {
+        const tx: Transaction = createTransaction(
+            address,
+            amount,
+            getPrivateFromWallet(),
+            this.unspentTxOuts,
+            this.transactionPool
+        );
+        this.transactionPool.addToTransactionPool(tx, this.unspentTxOuts);
+        return tx;
     }
 
     getAccountBalance = (): number => {

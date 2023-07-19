@@ -9,7 +9,7 @@ import { Block, Blockchain } from "./blockchain/blockchain";
 import { MESSAGE_TYPE, SOCKET_EVENT_NAME, TMessage } from "./constants/common-constants";
 import { buildMsg, parseJSON } from "./utils";
 import { indexOf } from "lodash";
-import { getPublicFromWallet, initWallet } from "./wallet";
+import { createTransaction, getPrivateFromWallet, getPublicFromWallet, initWallet } from "./wallet";
 import { Transaction, TransactionIn, TransactionOut } from "./blockchain/transaction";
 
 const httpPort: number = APP_CONSTANTS.HTTP_PORT;
@@ -132,6 +132,31 @@ const initHandlers = (socket: WebSocket) => {
                 return;
             }
 
+            case MESSAGE_TYPE.GET_TRANSACTION_POOL: {
+                send(socket, buildMsg(MESSAGE_TYPE.RECEIVE_TRANSACTION_POOL, blockchain.getTxPoolData()));
+                return;
+            }
+
+            case MESSAGE_TYPE.RECEIVE_TRANSACTION_POOL: {
+                const receivedTransactions = parseJSON<Transaction[]>(data.data);
+                if (receivedTransactions === null || !Array.isArray(receivedTransactions)) {
+                    console.log("Invalid transaction received: ", JSON.stringify(data.data));
+                    break;
+                }
+
+                receivedTransactions.forEach((transaction: Transaction) => {
+                    try {
+                        const temp = new Transaction(transaction.transactionIns, transaction.transactionOuts);
+                        blockchain.addToTxPool(temp);
+                        broadcast(buildMsg(MESSAGE_TYPE.RECEIVE_TRANSACTION_POOL, blockchain.getTxPoolData()));
+                    } catch (e: any) {
+                        console.log(e?.message);
+                    }
+                });
+
+                return;
+            }
+
             default: {
                 console.log("Invalid message type");
                 return;
@@ -177,17 +202,6 @@ const initBlockchainRouter = (): Router => {
         }
 
         res.send(newBlock);
-        // const transaction = new Transaction(body);
-
-        // const minedBlock = blockchain.mineBlock(transaction);
-        // const addStatus = blockchain.addBlock(minedBlock);
-        // broadcast(buildMsg(MESSAGE_TYPE.RECEIVE_CHAIN, [minedBlock]));
-
-        // if (!addStatus) {
-        //     return res.status(400).send({ msg: "Failed to mine a block" });
-        // }
-
-        // res.send(minedBlock);
     });
 
     // mine a transaction
@@ -208,6 +222,32 @@ const initBlockchainRouter = (): Router => {
         } catch (error: any) {
             console.log(error?.message);
             res.status(400).send({ msg: error?.message });
+        }
+    });
+
+    blockchainRouter.post("/transaction", (req, res) => {
+        try {
+            const { address, amount } = req.body;
+
+            if (!address || !amount) {
+                console.log("Invalid address or amount");
+                return res.status(400).send();
+            }
+
+            const parsedAmount = parseInt(amount);
+
+            if (address === "" || isNaN(parsedAmount)) {
+                console.log("Invalid address or amount");
+                return res.status(400).send();
+            }
+
+            const tx: Transaction = blockchain.sendTransaction(address, parsedAmount);
+            broadcast(buildMsg(MESSAGE_TYPE.RECEIVE_TRANSACTION_POOL, blockchain.getTxPoolData()));
+
+            res.send(tx);
+        } catch (e: any) {
+            console.log(e?.message);
+            res.status(400).send({ msg: e?.message });
         }
     });
 

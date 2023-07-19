@@ -1,4 +1,4 @@
-import { TransactionIn } from "../blockchain/transaction";
+import { TransactionIn, UnspentTransactionOut } from "../blockchain/transaction";
 import { MESSAGE_TYPE, TMessage } from "../constants/common-constants";
 import _ from "lodash";
 
@@ -42,4 +42,11 @@ export const hasDuplicates = (txIns: TransactionIn[]): boolean => {
             }
         })
         .includes(true);
+};
+
+export const hasTxIn = (txIn: TransactionIn, unspentTxOuts: UnspentTransactionOut[]): boolean => {
+    const foundTxIn = unspentTxOuts.find((uTxO: UnspentTransactionOut) => {
+        return uTxO.transactionOutId === txIn.transactionOutId && uTxO.transactionOutIndex === txIn.transactionOutIndex;
+    });
+    return foundTxIn !== undefined;
 };

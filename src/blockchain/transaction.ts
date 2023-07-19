@@ -3,6 +3,8 @@ import { ec, getPublicKeyFromPrivateKey } from "../keygen";
 import { hasDuplicates, toHexString } from "../utils";
 import { Blockchain } from "./blockchain";
 import _ from "lodash";
+import { TransactionPool } from "./transaction-pool";
+import { findTxOutsForAmount } from "../wallet";
 
 export const findUnspentTxOut = (
     transactionId: string,
@@ -268,6 +270,27 @@ export class Transaction {
             return false;
         }
 
+        return true;
+    }
+
+    isValidTxForPool(aTtransactionPool: TransactionPool): boolean {
+        const txPoolIns: TransactionIn[] = aTtransactionPool.getTxPoolIns();
+
+        const containsTxIn = (txIns: TransactionIn[], txIn: TransactionIn) => {
+            return _.find(txIns, (txPoolIn) => {
+                return (
+                    txIn.transactionOutIndex === txPoolIn.transactionOutIndex &&
+                    txIn.transactionOutId === txPoolIn.transactionOutId
+                );
+            });
+        };
+
+        for (const txIn of this.transactionIns) {
+            if (containsTxIn(txPoolIns, txIn)) {
+                console.log("txIn is already found in the txPool");
+                return false;
+            }
+        }
         return true;
     }
 }
