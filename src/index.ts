@@ -10,6 +10,7 @@ import { MESSAGE_TYPE, SOCKET_EVENT_NAME, TMessage } from "./constants/common-co
 import { buildMsg, parseJSON } from "./utils";
 import { indexOf } from "lodash";
 import { getPublicFromWallet, initWallet } from "./wallet";
+import { Transaction, TransactionIn, TransactionOut } from "./blockchain/transaction";
 
 const httpPort: number = APP_CONSTANTS.HTTP_PORT;
 const socketPort: number = APP_CONSTANTS.SOCKET_PORT;
@@ -81,8 +82,37 @@ const initHandlers = (socket: WebSocket) => {
                         } and current last block has index: ${currentChain[currentChain.length - 1].index}`
                     );
                     if (latestReceivedBlock.prevHash === currentChain[currentChain.length - 1].hash) {
+                        if (!Array.isArray(latestReceivedBlock.transaction)) {
+                            console.log("Content of the received block is not valid");
+                            return;
+                        }
                         console.log("Received block is the next block, add block to the chain");
-                        blockchain.addBlock(latestReceivedBlock);
+                        blockchain.addBlock(
+                            new Block(
+                                latestReceivedBlock.index,
+                                latestReceivedBlock.transaction.map(
+                                    (tx) =>
+                                        new Transaction(
+                                            tx.transactionIns.map(
+                                                (txIn) =>
+                                                    new TransactionIn(
+                                                        txIn.transactionOutId,
+                                                        txIn.transactionOutIndex,
+                                                        txIn.signature
+                                                    )
+                                            ),
+                                            tx.transactionOuts.map(
+                                                (txOut) => new TransactionOut(txOut.address, txOut.amount)
+                                            )
+                                        )
+                                ),
+                                latestReceivedBlock.difficulty,
+                                latestReceivedBlock.nonce,
+                                latestReceivedBlock.hash,
+                                latestReceivedBlock.prevHash,
+                                latestReceivedBlock.timestamp?.toString()
+                            )
+                        );
                         return;
                     }
 

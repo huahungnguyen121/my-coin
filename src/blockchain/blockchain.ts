@@ -21,12 +21,15 @@ export class Block {
         difficulty: number,
         nonce?: number,
         hash?: string,
-        prevHash?: string
+        prevHash?: string,
+        timestamp?: string
     ) {
+        const receivedTimestamp = timestamp ? new Date(timestamp) : "";
         this.index = index;
         this.prevHash = prevHash ? prevHash : "";
         this.transaction = transaction;
-        this.timestamp = index === 0 && this.transaction === null ? null : new Date();
+        this.timestamp =
+            index === 0 && this.transaction === null ? null : receivedTimestamp === "" ? new Date() : receivedTimestamp;
         this.difficulty = difficulty;
         this.nonce = nonce ? nonce : 0;
         this.hash = hash ? hash : "";
@@ -116,7 +119,15 @@ export class Blockchain {
     mineBlock(transaction: Transaction) {
         const index = this.chain.length;
         const prevHash = this.chain[index - 1].hash;
-        const newBlock = new Block(index, [transaction], this.getDifficulty(), undefined, undefined, prevHash);
+        const newBlock = new Block(
+            index,
+            [transaction],
+            this.getDifficulty(),
+            undefined,
+            undefined,
+            prevHash,
+            undefined
+        );
         return newBlock;
     }
 
@@ -144,7 +155,8 @@ export class Blockchain {
             difficulty,
             undefined,
             undefined,
-            previousBlock.hash
+            previousBlock.hash,
+            undefined
         );
         newBlock.mine();
 
