@@ -9,7 +9,7 @@ import { Block, Blockchain } from "./blockchain/blockchain";
 import { MESSAGE_TYPE, SOCKET_EVENT_NAME, TMessage } from "./constants/common-constants";
 import { buildMsg, parseJSON } from "./utils";
 import { indexOf } from "lodash";
-import { createTransaction, getPrivateFromWallet, getPublicFromWallet, initWallet } from "./wallet";
+import { initWallet } from "./wallet";
 import { Transaction, TransactionIn, TransactionOut } from "./blockchain/transaction";
 
 const httpPort: number = APP_CONSTANTS.HTTP_PORT;
