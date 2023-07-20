@@ -4,6 +4,7 @@ import Home from "../pages/home/Home";
 import { Container } from "@mui/material";
 import Wallet from "../pages/wallet";
 import TransactionHistory from "../pages/transaction-history";
+import CreateWallet from "../pages/wallet/create-wallet";
 
 const routes: RouteObject[] = [
     {
@@ -24,6 +25,10 @@ const routes: RouteObject[] = [
             {
                 path: "my-wallet",
                 element: <Wallet />,
+            },
+            {
+                path: "create-wallet",
+                element: <CreateWallet />,
             },
             {
                 path: "transaction-history",

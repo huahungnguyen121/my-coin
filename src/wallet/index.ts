@@ -4,8 +4,8 @@ import { Transaction, TransactionIn, TransactionOut, UnspentTransactionOut } fro
 import { ec as EC, getPublicKeyFromPrivateKey } from "../keygen";
 import { TransactionPool } from "../blockchain/transaction-pool";
 
-const privateKeyLocation = "files/wallet/private_key";
-const publicKeyLocation = "files/wallet/public_key";
+const privateKeyLocation = "files/wallet/private_key.txt";
+const publicKeyLocation = "files/wallet/public_key.txt";
 
 const getPrivateFromWallet = (): string => {
     const buffer = readFileSync(privateKeyLocation, "utf8");
