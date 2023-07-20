@@ -356,7 +356,23 @@ export class Blockchain {
         return tx;
     }
 
-    getAccountBalance = (): number => {
+    getAccountBalance(): number {
         return getBalance(getPublicFromWallet(), this.unspentTxOuts);
-    };
+    }
+
+    getBalanceOfAddress(address: string) {
+        const isAddressValid = Blockchain.isValidAddress(address);
+        return isAddressValid ? getBalance(address, this.unspentTxOuts) : null;
+    }
+
+    findBlock(hash: string) {
+        return _.find(this.chain, { hash: hash });
+    }
+
+    findTransaction(transactionId: string) {
+        return _(this.chain)
+            .map((block) => block.transaction as Transaction[])
+            .flatten()
+            .find({ id: transactionId });
+    }
 }

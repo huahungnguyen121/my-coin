@@ -2,3 +2,4 @@ node_modules
 build
 .env
 files/wallet/private_key
+files/wallet/public_key

@@ -225,6 +225,7 @@ const initBlockchainRouter = (): Router => {
         }
     });
 
+    // create a transaction and add to the transaction pool
     blockchainRouter.post("/transaction", (req, res) => {
         try {
             const { address, amount } = req.body;
@@ -251,8 +252,45 @@ const initBlockchainRouter = (): Router => {
         }
     });
 
+    // FE APIs
     blockchainRouter.get("/balance", (req, res) => {
         const balance = blockchain.getAccountBalance();
+        res.send({ balance: balance });
+    });
+
+    blockchainRouter.get("/block/:hash", (req, res) => {
+        const { hash } = req.params;
+
+        if (!hash || hash === "") return res.status(404).send();
+
+        const foundBlock = blockchain.findBlock(hash);
+
+        if (foundBlock == null) return res.status(404).send();
+
+        res.send(foundBlock);
+    });
+
+    blockchainRouter.get("/transaction/:id", (req, res) => {
+        const { id } = req.params;
+
+        if (!id || id === "") return res.status(404).send();
+
+        const foundTx = blockchain.findTransaction(id);
+
+        if (foundTx == null) return res.status(404).send();
+
+        res.send(foundTx);
+    });
+
+    blockchainRouter.get("/balance/:address", (req, res) => {
+        const { address } = req.params;
+
+        if (!address || address === "") return res.status(404).send();
+
+        const balance = blockchain.getBalanceOfAddress(address);
+
+        if (balance == null) return res.status(404).send();
+
         res.send({ balance: balance });
     });
 
@@ -295,9 +333,10 @@ const initHttpServer = (myHttpPort: number) => {
     });
 
     // init routers
-    app.use("/blockchain", initBlockchainRouter());
-
-    app.use("/p2p", initP2pRouter());
+    const apiRouter = express.Router();
+    apiRouter.use("/blockchain", initBlockchainRouter());
+    apiRouter.use("/p2p", initP2pRouter());
+    app.use("/api", apiRouter);
 
     app.listen(myHttpPort, () => {
         console.log("HTTP is listening on port: " + myHttpPort);

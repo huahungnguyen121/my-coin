@@ -5,6 +5,7 @@ import { ec as EC, getPublicKeyFromPrivateKey } from "../keygen";
 import { TransactionPool } from "../blockchain/transaction-pool";
 
 const privateKeyLocation = "files/wallet/private_key";
+const publicKeyLocation = "files/wallet/public_key";
 
 const getPrivateFromWallet = (): string => {
     const buffer = readFileSync(privateKeyLocation, "utf8");
@@ -25,11 +26,16 @@ const generatePrivateKey = (): string => {
 const initWallet = () => {
     // Prevent overriding existing private keys
     if (existsSync(privateKeyLocation)) {
+        if (existsSync(publicKeyLocation)) {
+            return;
+        }
+        writeFileSync(publicKeyLocation, getPublicKeyFromPrivateKey(getPrivateFromWallet()));
         return;
     }
     const newPrivateKey = generatePrivateKey();
 
     writeFileSync(privateKeyLocation, newPrivateKey);
+    writeFileSync(publicKeyLocation, getPublicKeyFromPrivateKey(newPrivateKey));
     console.log("Created a new wallet with provided private key");
 };
 
