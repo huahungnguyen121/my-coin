@@ -5,17 +5,18 @@ import { Container } from "@mui/material";
 import Wallet from "../pages/wallet";
 import TransactionHistory from "../pages/transaction-history";
 import CreateWallet from "../pages/wallet/create-wallet";
+import { KeyContextProvider } from "../context/key-context";
 
 const routes: RouteObject[] = [
     {
         path: "/",
         element: (
-            <>
+            <KeyContextProvider>
                 <Header />
                 <Container id="content-container" maxWidth="lg">
                     <Outlet />
                 </Container>
-            </>
+            </KeyContextProvider>
         ),
         children: [
             {
@@ -31,7 +32,7 @@ const routes: RouteObject[] = [
                 element: <CreateWallet />,
             },
             {
-                path: "transaction-history",
+                path: "my-transaction",
                 element: <TransactionHistory />,
             },
         ],

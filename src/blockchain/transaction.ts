@@ -4,7 +4,6 @@ import { hasDuplicates, toHexString } from "../utils";
 import { Blockchain } from "./blockchain";
 import _ from "lodash";
 import { TransactionPool } from "./transaction-pool";
-import { findTxOutsForAmount } from "../wallet";
 
 export const findUnspentTxOut = (
     transactionId: string,
@@ -292,5 +291,12 @@ export class Transaction {
             }
         }
         return true;
+    }
+
+    belongToAddress(address: string) {
+        const signature = this.transactionIns[0].signature;
+        if (signature === "") return false;
+        const key = ec.keyFromPublic(address, "hex");
+        return key.verify(this.id, signature);
     }
 }

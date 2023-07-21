@@ -226,7 +226,7 @@ const initBlockchainRouter = (): Router => {
     });
 
     // create a transaction and add to the transaction pool
-    blockchainRouter.post("/transaction", (req, res) => {
+    blockchainRouter.post("/send-transaction", (req, res) => {
         try {
             const { address, amount } = req.body;
 
@@ -252,6 +252,35 @@ const initBlockchainRouter = (): Router => {
         }
     });
 
+    blockchainRouter.post("/:privateKey/send-transaction", (req, res) => {
+        const { privateKey } = req.params;
+        if (!privateKey || privateKey === "") return res.status(400).send();
+
+        try {
+            const { address, amount } = req.body;
+
+            if (!address || !amount) {
+                console.log("Invalid address or amount");
+                return res.status(400).send();
+            }
+
+            const parsedAmount = parseInt(amount);
+
+            if (address === "" || isNaN(parsedAmount)) {
+                console.log("Invalid address or amount");
+                return res.status(400).send();
+            }
+
+            const tx: Transaction = blockchain.sendTransactionWithPrivateKey(address, parsedAmount, privateKey);
+            broadcast(buildMsg(MESSAGE_TYPE.RECEIVE_TRANSACTION_POOL, blockchain.getTxPoolData()));
+
+            res.send(tx);
+        } catch (e: any) {
+            console.log(e?.message);
+            res.status(400).send({ msg: e?.message });
+        }
+    });
+
     // FE APIs
     blockchainRouter.get("/balance", (req, res) => {
         const balance = blockchain.getAccountBalance();
@@ -268,6 +297,29 @@ const initBlockchainRouter = (): Router => {
         if (foundBlock == null) return res.status(404).send();
 
         res.send(foundBlock);
+    });
+
+    blockchainRouter.get("/transaction", (req, res) => {
+        res.send(blockchain.getTxPoolData());
+    });
+
+    blockchainRouter.get("/transaction/:address", (req, res) => {
+        const { address } = req.params;
+
+        if (!address || address === "") return res.status(404).send();
+
+        const foundTxsInChain = blockchain.findTransactionCreatedByAddressInChain(address);
+        const foundPendingTxs = blockchain.findPendingTransactionCreatedByAddress(address);
+
+        const resp: {
+            pending: Transaction[];
+            done: Transaction[];
+        } = {
+            pending: foundPendingTxs,
+            done: foundTxsInChain,
+        };
+
+        res.send(resp);
     });
 
     blockchainRouter.get("/transaction/:id", (req, res) => {

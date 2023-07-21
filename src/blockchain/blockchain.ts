@@ -356,6 +356,18 @@ export class Blockchain {
         return tx;
     }
 
+    sendTransactionWithPrivateKey(address: string, amount: number, privateKey: string) {
+        const tx: Transaction = createTransaction(
+            address,
+            amount,
+            privateKey,
+            this.unspentTxOuts,
+            this.transactionPool
+        );
+        this.transactionPool.addToTransactionPool(tx, this.unspentTxOuts);
+        return tx;
+    }
+
     getAccountBalance(): number {
         return getBalance(getPublicFromWallet(), this.unspentTxOuts);
     }
@@ -374,5 +386,17 @@ export class Blockchain {
             .map((block) => block.transaction as Transaction[])
             .flatten()
             .find({ id: transactionId });
+    }
+
+    findTransactionCreatedByAddressInChain(address: string) {
+        return _(this.chain.filter((_, index) => index > 0))
+            .map((block) => block.transaction as Transaction[])
+            .flatten()
+            .filter((tx) => tx.belongToAddress(address))
+            .value();
+    }
+
+    findPendingTransactionCreatedByAddress(address: string) {
+        return this.transactionPool.getPool().filter((tx) => tx.belongToAddress(address));
     }
 }

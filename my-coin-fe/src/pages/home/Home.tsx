@@ -1,4 +1,4 @@
-import { Button, Stack, Box } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import "./Home.css";
 import { useNavigate } from "react-router-dom";
 
@@ -12,16 +12,12 @@ function Home() {
     return (
         <div className="home-container">
             <Stack gap={3}>
-                <h1>Welcome to MYCOIN</h1>
-
-                <Box>How can I help you?</Box>
+                <Typography variant="h4" sx={{ fontWeight: "bold" }}>
+                    Welcome to MYCOIN
+                </Typography>
 
                 <Button size="large" variant="contained" onClick={() => handleNavigate("/my-wallet")}>
-                    View my wallet
-                </Button>
-
-                <Button size="large" variant="contained" onClick={() => handleNavigate("/transaction-history")}>
-                    View transaction history
+                    Access my wallet
                 </Button>
             </Stack>
         </div>

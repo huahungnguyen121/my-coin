@@ -7,28 +7,33 @@ import API from "../../services/axios";
 import WalletInfo from "./wallet-info";
 import WalletTransaction from "./wallet-transaction";
 import { useNavigate } from "react-router-dom";
+import { useKeyContext } from "../../context/key-context";
+import WalletTransactionPool from "./wallet-transaction-pool";
 
 export default function Wallet() {
-    const [myPrivateKey, setMyPrivateKey] = useState<string>("");
-    const [myPublicKey, setMyPublicKey] = useState<string>("");
+    const { publicKey, privateKey, changePrivateKey, changePublicKey } = useKeyContext();
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [myBalance, setMyBalance] = useState<number | undefined>();
+    const [refresh, setRefresh] = useState(false);
 
     const inputRef = useRef<HTMLInputElement | null>(null);
 
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (myPrivateKey === "") return;
+        if (privateKey === "") return;
 
-        const publicKey = getPublicKeyFromPrivateKey(myPrivateKey);
-        setMyPublicKey(publicKey);
+        let inferredPublicKey = publicKey;
+        if (publicKey === "") {
+            inferredPublicKey = getPublicKeyFromPrivateKey(privateKey);
+            changePublicKey(inferredPublicKey);
+        }
 
         const fetchWalletInfo = async () => {
             setIsLoading(true);
             try {
-                const resp: any = await API.get(`/blockchain/balance/${publicKey}`);
+                const resp = await API.get<any, { balance: number }>(`/blockchain/balance/${inferredPublicKey}`);
                 setMyBalance(resp.balance);
             } catch (err) {
                 console.log(err);
@@ -37,7 +42,7 @@ export default function Wallet() {
         };
 
         fetchWalletInfo();
-    }, [myPrivateKey, isLoading]);
+    }, [privateKey, publicKey, refresh, changePublicKey]);
 
     const handleSubmitPrivateKey: React.FormEventHandler<HTMLFormElement> = (e) => {
         e.preventDefault();
@@ -49,7 +54,9 @@ export default function Wallet() {
             return;
         }
 
-        setMyPrivateKey(inputPrivateKey);
+        changePrivateKey(inputPrivateKey);
+        setError("");
+        (e.target as any).reset();
     };
 
     const handleLoadKey: React.ChangeEventHandler<HTMLInputElement> = (e) => {
@@ -62,15 +69,15 @@ export default function Wallet() {
 
         reader.onload = (event) => {
             if (event.target === null) return;
-            setMyPrivateKey(event.target.result as string);
+            changePrivateKey(event.target.result as string);
         };
 
         reader.readAsText(targetFile);
     };
 
     const changeWallet = () => {
-        setMyPrivateKey("");
-        setMyPublicKey("");
+        changePrivateKey("");
+        changePublicKey("");
         setMyBalance(undefined);
     };
 
@@ -82,11 +89,20 @@ export default function Wallet() {
                 <>
                     {myBalance !== undefined ? (
                         <Stack gap={3}>
-                            <WalletInfo balance={myBalance} publicAddress={myPublicKey} changeWallet={changeWallet} />
+                            <WalletInfo
+                                balance={myBalance}
+                                publicAddress={publicKey}
+                                changeWallet={changeWallet}
+                                refresh={() => setRefresh((prev) => !prev)}
+                            />
 
                             <Divider flexItem />
 
-                            <WalletTransaction />
+                            <WalletTransaction privateKey={privateKey} />
+
+                            <Divider flexItem />
+
+                            <WalletTransactionPool />
                         </Stack>
                     ) : (
                         <Stack gap={3}>

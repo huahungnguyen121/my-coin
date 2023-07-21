@@ -4,10 +4,11 @@ interface WalletInfoProps {
     balance?: number;
     publicAddress?: string;
     changeWallet?: () => void;
+    refresh?: () => void;
 }
 
 export default function WalletInfo(props: WalletInfoProps) {
-    const { balance, publicAddress, changeWallet } = props;
+    const { balance, publicAddress, changeWallet, refresh } = props;
     return (
         <Stack gap={3}>
             <Typography sx={{ fontWeight: "bold" }} variant="h5">
@@ -28,7 +29,11 @@ export default function WalletInfo(props: WalletInfoProps) {
 
             {balance !== undefined ? <Typography variant="body1">{balance} MYCOIN(s)</Typography> : "N/A"}
 
-            <Stack direction="row" sx={{ justifyContent: "flex-end" }}>
+            <Stack direction="row" sx={{ justifyContent: "flex-end" }} gap={2}>
+                <Button variant="contained" size="large" onClick={() => refresh && refresh()}>
+                    Refresh
+                </Button>
+
                 <Button variant="contained" size="large" onClick={() => changeWallet && changeWallet()}>
                     Change Wallet
                 </Button>

@@ -1,13 +1,13 @@
-import { AppBar, Box, Button, Container, Typography } from "@mui/material";
+import { AppBar, Box, Container, Typography } from "@mui/material";
 import "./style.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Header() {
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
-    const handleNavigate = (path: string) => {
-        navigate(path);
-    };
+    // const handleNavigate = (path: string) => {
+    //     navigate(path);
+    // };
 
     return (
         <AppBar color="primary" position="fixed" className="header-container">
@@ -17,7 +17,7 @@ export default function Header() {
                 </Link>
 
                 <Box sx={{ display: "flex", gap: "1rem" }}>
-                    <Button variant="text" style={{ color: "white" }} onClick={() => handleNavigate("/my-wallet")}>
+                    {/* <Button variant="text" style={{ color: "white" }} onClick={() => handleNavigate("/my-wallet")}>
                         My Wallet
                     </Button>
                     <Button
@@ -26,7 +26,7 @@ export default function Header() {
                         onClick={() => handleNavigate("/transaction-history")}
                     >
                         Transaction History
-                    </Button>
+                    </Button> */}
                 </Box>
             </Container>
         </AppBar>
